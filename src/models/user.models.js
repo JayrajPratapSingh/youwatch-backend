@@ -56,15 +56,15 @@ userSchema.pre("save", async function (next) {
 next()
 
 if(!this.isModified("password")) return next() // if password is not modified then return next flag and isModified is available method in this
-this.password = bcrypt.hash(this.password, 10)
+this.password = await bcrypt.hash(this.password, 10)
 next()
 }) 
 
 
 // YOU cna define your own methods using methods keyword
 
-userSchema.menthods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(password, this.password) // there is compare method to comapare password that it is hashed password and input password are correct
+userSchema.methods.isPasswordCorrect = async function (password) {
+    return await bcrypt.compare(password, this.password);  // there is compare method to comapare password that it is hashed password and input password are correct
 }
 
 // make another method to genrate token
