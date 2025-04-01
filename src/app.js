@@ -15,5 +15,13 @@ app.use(express.urlencoded({extended: true, limit:"16kb"})); // for url encoded 
 app.use(express.static("public")); // for static files like: images, pdf etc
 
 app.use(cookieParser()); // for cookies reading
+// route import
+import userRouter from "./routes/user.routes.js"
+
+
+// routes declarations
+
+app.use("/api/v1/users", userRouter) // the first is for on which route(it will work as prefix route) and second is for which router do you want to activate it will be inside a middlewatre app.use because we seperated router and controllers
+
 
 export {app};

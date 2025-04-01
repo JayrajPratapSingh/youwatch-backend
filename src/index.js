@@ -12,7 +12,7 @@ connectDB().then(()=>{
         console.error("MongoDB connection error:", error)
         throw error;
     })
-app.listen(8000, ()=>{
+app.listen(port, ()=>{
     console.log(`Server is running on port ${port}`)
 })
 }).catch((err)=>{
