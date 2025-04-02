@@ -17,7 +17,7 @@ const registerUser = asyncHandler(async(req, res) => {
 
   // if data comes form form or json then direct take form body
 const {userName, fullName, email, password} = req.body 
-console.log(email, userName, fullName, password)
+// console.log(email, userName, fullName, password)
 if([fullName, email, userName, password].some((field)=>{
     field?.trim() === ""
 })){
@@ -25,7 +25,7 @@ if([fullName, email, userName, password].some((field)=>{
 }
 
 // find if user is already exist
-const existedUser = User.findOne({
+const existedUser = await User.findOne({
     $or:[ // give array of object fields which you want to find
         {userName},
         {email}
@@ -39,9 +39,14 @@ if(existedUser){
 }
 
 // check if file is exist or not
+// console.table(req.files)
 const avatarLoacalPath = req.files?.avatar[0]?.path // this will give you local path form multer which have files property for avatar
-const coverImageLocalPath = req.files?.coverImage[0]?.path; // this will give you local path form multer which have files property for cover image
+// const coverImageLocalPath = req.files?.coverImage[0]?.path; // this will give you local path form multer which have files property for cover image
+let coverImageLocalPath
 
+if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+    coverImageLocalPath = req.files.coverImage[0].path
+}
 if(!avatarLoacalPath){
     throw new ApiError(400, "Please upload avatar image" )
 }
@@ -51,6 +56,7 @@ if(!avatarLoacalPath){
 const avatar = await uploadOnCloudinary(avatarLoacalPath)
 const coverImage  = await uploadOnCloudinary(coverImageLocalPath)
 
+
 if(!avatar){
 throw new ApiError(400, "Please upload avatar")
 }
@@ -59,7 +65,7 @@ const user = User.create({
     fullName,
     avatar: avatar.url,
     coverImage: coverImage?.url || "",
-    userName:userName.toLowarCase(),
+    userName:userName,
     email,
     password,
 })
