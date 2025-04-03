@@ -39,7 +39,7 @@ password:{
     type:String,
     required:[true,"Password is required"]
 },
-refereshToken:{
+refreshToken:{
     type:String
 }
 },
@@ -84,16 +84,16 @@ process.env.ACCESS_TOKEN_SECRET,
 )
 }
 
-userSchema.methods.genrateRefereshToken =function (){
+userSchema.methods.genrateRefreshToken =function (){
     return jwt.sign({
         _id: this._id,
         email: this.email,
         userName: this.userName,
         fullName: this.fullName, // key is comes form payload and this.fullName is from our database
     },
-    process.env.REFERESH_TOKEN_SECRET,
+    process.env.REFRESH_TOKEN_SECRET,
     {
-        expiresIn: process.env.REFERESH_TOKEN_EXPIRY
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY
     }
     
     )

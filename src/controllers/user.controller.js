@@ -4,6 +4,27 @@ import {User} from "../models/user.models.js"
 import {uploadOnCloudinary} from "../utils/uploadFile.js"
 import {ApiResponse} from "../utils/apiResponse.js"
 
+const genrateAccessAndRefreshToken = async(userId)=>{
+    // generate access and refresh token
+    try {
+
+       const user = await User.findById(userId)
+       const accessToken = user.genrateAccessToken()
+       const refreshToken = user.genrateRefreshToken()
+       user.refreshToken = refreshToken
+
+       await user.save({validateBeforeSave: false}) // when you go to save the data then password will be required then {validateBeforeSave: false} this will help you to save like it will save withoud validation error
+
+       return {accessToken, refreshToken}
+        
+    } catch (error) {
+        throw new ApiError(500, "something went wrong while genrating access and refresh token")
+
+    }
+
+
+}
+
 const registerUser = asyncHandler(async(req, res) => {
   // Get User Details form from frontend
   // validations - not empty //you can make more validation for email and other validation in a seprate file as method and you can call them and use to varify 
@@ -87,4 +108,98 @@ return res.status(201).json(
 }
 )
 
-export {registerUser}
+
+const loginUser = asyncHandler(async(req,res)=>{
+
+    //teke data from req.body
+    // check if username or email are available
+    // find the user
+    // compare password
+    // if password is correct then generate token like referesh token and access token
+    // send secure cookies
+
+     const {email, userName, password} =   req.body
+     if(!userName || !password){
+        throw new ApiError(400, "username or email required !!")
+     }
+
+     //find the user in database
+
+    const user = await User.findOne({  // this user will hold that property which we make in model like is password correct, getnrateRefreshToken and genrateAccessToken
+        $or:[
+            {userName},
+            {email}
+        ]
+     })
+
+     // if user is not found
+     if(!user){
+        throw new ApiError(401, "Invalid username or password")
+     }
+
+     // Note: Do not use isPassword correct from User alwase use form user which you made here
+
+   const isPasswordValid =  await user.isPasswordCorrect(password)
+
+     if(!isPasswordValid){
+        throw new ApiError(401, "Invalid user Credentials")
+     }
+
+    const {accessToken, refreshToken} = await genrateAccessAndRefreshToken(user._id)
+
+    const loggedUser = await User.findById(user._id).select("-password -refreshToken")
+
+    const options ={ // this two options will secure your cookie only modified by server not from client side
+        httpOnly: true,
+        secure:true
+    }
+    
+    return res.status(200)
+    .cookie("accessToken", accessToken, options) // we are accessing this cookie because of cookieParser which in app.js
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+        new ApiResponse(200,
+            {
+                user: loggedUser, accessToken, refreshToken  // here it is not a good practice but maybe user want to make mobile apps or he want to save locally so it will be helpful
+
+            },
+            "User LoggedIn Successfully"
+        )
+    )
+
+})
+
+const logOutUser = asyncHandler(async(req, res)=>{
+   User.findByIdAndUpdate(req.user._id,
+    {
+        $set:{
+            refreshToken:undefined,
+        }
+    },
+{
+    new:true,
+    
+}
+   ) 
+
+   const options ={
+       httpOnly: true,
+        secure:true
+ 
+   }
+
+
+   return res.status(200).clearCookie("accessToken").clearCookie("refreshToken").json(
+    new ApiResponse(
+        200,
+        {},
+        "User Logged Out Successfully"
+    )
+   )
+})
+
+export {
+    registerUser,
+    loginUser,
+    logOutUser
+}
